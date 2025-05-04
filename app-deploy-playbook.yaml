@@ -1,0 +1,56 @@
+---
+- name: Deploy DotNet Application
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure the application directory exists
+      file:
+        path: /var/www/myapp
+        state: directory
+        mode: '0755'
+
+    - name: Ensure unzip is installed
+      apt:
+        name: unzip
+        state: present
+        update_cache: yes    
+
+    - name: Copy the application artifact to the target machine
+      copy:
+        src: "~/myagent/_work/application/s.zip" # Ensure the artifact is packaged as .zip in build pipeline
+        dest: /var/www/myapp/dotnet-application.zip
+
+    - name: Extract the application archive
+      unarchive:
+        src: /var/www/myapp/dotnet-application.zip
+        dest: /var/www/myapp
+        remote_src: yes
+        mode: '0755'
+
+    - name: Remove the zip file after extraction
+      file:
+        path: /var/www/myapp/dotnet-application.zip
+        state: absent
+
+    - name: Install .NET runtime (if required)
+      apt:
+        name: 'dotnet-sdk-8.0'
+        state: present
+        update_cache: yes
+
+    - name: Copy the systemd service file
+      copy:
+        src: "~/myagent/_work/ansible-files/Proj1.service"
+        dest: /etc/systemd/system/Proj1.service
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Reload systemd daemon
+      command: systemctl daemon-reload
+
+    - name: Enable and start the application service
+      systemd:
+        name: Proj1
+        enabled: yes
+        state: started

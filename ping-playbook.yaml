@@ -1,0 +1,6 @@
+---
+- name: Test Connectivity to Web Servers
+  hosts: all
+  tasks:
+    - name: Ping the target
+      ansible.builtin.ping:
